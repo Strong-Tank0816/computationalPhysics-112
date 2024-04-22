@@ -195,7 +195,6 @@ class NBodySimulator:
         return particles
 
 
-
 if __name__ == "__main__":
     
     pass
