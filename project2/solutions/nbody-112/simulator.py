@@ -13,7 +13,25 @@ The N-Body Simulator class is responsible for simulating the motion of N bodies
 """
 
 class NBodySimulator:
+    @njit(parallel=True)
+    def _calculate_acceleration_kernel(nparticles, masses, positions, accelerations, G, rsoft):
+        """
+        Calculate the acceleration of the particles
 
+        :param particles: Particles, the particles to calculate the acceleration
+        """
+
+    # kernel for acceleration calculation
+        for i in prange(nparticles):
+            for j in prange(nparticles):
+                if (j>i): 
+                    rij = positions[i,:] - positions[j,:]
+                    r = np.sqrt(np.sum(rij**2) + rsoft**2)
+                    force = - G * masses[i,0] * masses[j,0] * rij / r**3
+                    accelerations[i,:] += force[:] / masses[i,0]
+                    accelerations[j,:] -= force[:] / masses[j,0]
+
+        return accelerations
     def __init__(self, particles: Particles):
         
         self.particles = particles
@@ -141,11 +159,11 @@ class NBodySimulator:
 
         pos = particles.positions
         vel = particles.velocities
-        acc = self._calculate_acceleration(nparticles, mass, pos)
+        acc = self._calculate_acceleration_kernel(nparticles, mass, pos)
 
         pos = pos + vel*dt
         vel = vel + acc*dt
-        acc = self._calculate_acceleration(nparticles, mass, pos)
+        acc = self._calculate_acceleration_kernel(nparticles, mass, pos)
 
         particles.set_particles(pos, vel, acc)
 
@@ -160,7 +178,7 @@ class NBodySimulator:
         vel = particles.velocities
 
         t1 = time.time()
-        acc = self._calculate_acceleration(nparticles, mass, pos)
+        acc = self._calculate_acceleration_kernel(nparticles, mass, pos)
 
         t2 = time.time()
         print("Time for acc", t2-t1)
@@ -168,14 +186,14 @@ class NBodySimulator:
         vel2 = vel + acc*dt
         t3 = time.time()
         print("Time for updates", t3-t2)
-        acc2 = self._calculate_acceleration(nparticles, mass, pos2)
+        acc2 = self._calculate_acceleration_kernel(nparticles, mass, pos2)
 
         pos2 = pos2 + vel2*dt
         vel2 = vel2 + acc2*dt
 
         pos = 0.5*(pos + pos2)
         vel = 0.5*(vel + vel2)
-        acc = self._calculate_acceleration(nparticles, mass, pos)
+        acc = self._calculate_acceleration_kernel(nparticles, mass, pos)
 
         particles.set_particles(pos, vel, acc)
 
@@ -183,7 +201,29 @@ class NBodySimulator:
 
     def _advance_particles_RK4(self, dt, particles):
         
-        #TODO
+        nparticles = particles.nparticles
+        mass = particles.masses
+
+        pos = particles.positions
+        vel = particles.velocities
+
+        t1 = time.time()
+        acc = self._calculate_acceleration_kernel(nparticles, mass, pos)
+
+        t2 = time.time()
+        print("Time for acc", t2-t1)
+        pos2 = pos + vel*dt
+        vel2 = vel + acc*dt
+        t3 = time.time()
+        print("Time for updates", t3-t2)
+        acc2 = self._calculate_acceleration_kernel(nparticles, mass, pos2)
+
+        pos2 = pos2 + vel2*dt
+        vel2 = vel2 + acc2*dt
+
+        pos = 0.5*(pos + pos2)
+        vel = 0.5*(vel + vel2)
+        acc = self._calculate_acceleration_kernel(nparticles, mass, pos)
 
 
 
