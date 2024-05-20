@@ -21,8 +21,16 @@ def solveLowerTriangular(L,b):
     """
     n  = len(b)
     x  = np.zeros(n)
+    bs = np.copy(b)
 
-    # TODO
+    for j in range(n):
+        # check if L[i,i] is singular
+        if L[j,j] == 0:
+            raise ValueError("L[{},{}] is zero".format(i,i))
+        x[j] = bs[j]/L[j,j]
+        
+        for i in range(j,n):
+            bs[i] -= L[i,j]*x[j]
     
     return x
 
@@ -41,8 +49,16 @@ def solveUpperTriangular(U,b):
     """
     n  = len(b)
     x  = np.zeros(n)
- 
-    # TODO
+    bs = np.copy(b)
+
+    for j in range(n-1,-1,-1):
+        # check if U[i,i] is singular
+        if U[j,j] == 0:
+            raise ValueError("U[{},{}] is zero".format(i,i))
+        x[j] = bs[j]/U[j,j]
+        
+        for i in range(j):
+            bs[i] -= U[i,j]*x[j]
     
     return x
 
@@ -60,10 +76,26 @@ def lu(A):
 
     """
     n  = len(A)
-    L  = np.zeros((n,n))
+    L  = np.identity(n)
     U  = np.zeros((n,n))
+    M  = np.zeros((n,n))
+    As = np.copy(A)
 
-    # TODO
+    for k in np.arange(n):
+        # check if A[i,i] is singular
+        if As[k,k] == 0:
+            raise ValueError("A[{},{}] is zero".format(i,i))
+        
+        for i in np.arange(k+1,n):
+            M[i,k] = As[i,k]/As[k,k]
+
+        for j in np.arange(k+1,n):
+            for i in range(k+1,n):
+                As[i,j] -= M[i,k]*As[k,j]
+
+    for i in np.arange(n):
+        L[i,:i] = M[i,:i]
+        U[i,i:] = As[i,i:]   
     
     return L, U
 
@@ -81,9 +113,15 @@ def lu_solve(A,b):
 
     """
 
-    x = np.zeros(len(b))
+    # First, we decompose A into L and U
+    # using the LU decomposition
 
-    # TODO
+    L, U = lu(A)
 
+    # solve L y = b
+    y    = solveLowerTriangular(L,b)
+
+    # solve U x = y
+    x    = solveUpperTriangular(U,y)
 
     return x
